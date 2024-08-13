@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth, createUserWithEmailAndPassword } from "../firebase";
-import { db } from "../firebase";
+import { auth, db } from "../firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 
 const SignUp = () => {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [userType, setUserType] = useState("employee"); // Default to employee
+  const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   const handleSignUp = async () => {
@@ -19,26 +21,36 @@ const SignUp = () => {
       );
       const user = userCredential.user;
 
-      // Store the user role in Firestore
+      // Save additional user info to Firestore with default role 'employee'
       await setDoc(doc(db, "users", user.uid), {
-        email: user.email,
-        role: userType,
+        firstName,
+        lastName,
+        email,
+        role: "employee", // Default role
       });
 
-      // Redirect to the correct dashboard after sign-up
-      if (userType === "employee") {
-        navigate("/employee-dashboard");
-      } else {
-        navigate("/employer-dashboard");
-      }
+      setMessage("User created successfully.");
+      navigate("/signin"); // Redirect to sign-in page after successful registration
     } catch (error) {
-      console.error("Error signing up:", error);
+      setMessage(`Error: ${error.message}`);
     }
   };
 
   return (
     <div>
       <h2>Sign Up</h2>
+      <input
+        type="text"
+        value={firstName}
+        onChange={(e) => setFirstName(e.target.value)}
+        placeholder="First Name"
+      />
+      <input
+        type="text"
+        value={lastName}
+        onChange={(e) => setLastName(e.target.value)}
+        placeholder="Last Name"
+      />
       <input
         type="email"
         value={email}
@@ -51,11 +63,8 @@ const SignUp = () => {
         onChange={(e) => setPassword(e.target.value)}
         placeholder="Password"
       />
-      <select value={userType} onChange={(e) => setUserType(e.target.value)}>
-        <option value="employee">Employee</option>
-        <option value="employer">Employer</option>
-      </select>
       <button onClick={handleSignUp}>Sign Up</button>
+      {message && <p>{message}</p>}
     </div>
   );
 };
